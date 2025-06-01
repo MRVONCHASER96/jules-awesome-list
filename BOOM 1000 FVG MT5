@@ -1,0 +1,57 @@
+//+------------------------------------------------------------------+
+//|                                                      BoomFVG.mq5 |
+//|                         Fair Value Gap + 1:1 RR Indicator        |
+//+------------------------------------------------------------------+
+#property indicator_chart_window
+#include <ChartObjects\ChartObjectsTxtControls.mqh>
+
+input int    FVG_Range      = 5;      // Candles to project FVG
+input double RR_Ratio       = 1.0;    // Risk to Reward Ratio (1:1)
+input int    Lookback       = 500;    // How many candles to scan
+
+// FVG Detection
+void DetectFVG() {
+    for(int i = Lookback; i > 2; i--) {
+        double high1 = High[i];
+        double low3 = Low[i-2];
+        double low2 = Low[i-1];
+        double high2 = High[i-1];
+
+        if (low3 > high1) {
+            double top = low3;
+            double bottom = high1;
+
+            // Draw FVG Rectangle
+            string fvg_name = "FVG_" + IntegerToString(i);
+            ObjectCreate(0, fvg_name, OBJ_RECTANGLE, 0, Time[i], top, Time[i-FVG_Range], bottom);
+            ObjectSetInteger(0, fvg_name, OBJPROP_COLOR, clrDarkGreen);
+            ObjectSetInteger(0, fvg_name, OBJPROP_STYLE, STYLE_SOLID);
+            ObjectSetInteger(0, fvg_name, OBJPROP_WIDTH, 1);
+            ObjectSetInteger(0, fvg_name, OBJPROP_BACK, true);
+
+            // Optional: simulate RR box (TP & SL)
+            double entry = top;
+            double sl = bottom;
+            double tp = entry + (entry - sl);  // 1:1 RR
+
+            string lineName = "TP_" + IntegerToString(i);
+            ObjectCreate(0, lineName, OBJ_HLINE, 0, Time[i], tp);
+            ObjectSetInteger(0, lineName, OBJPROP_COLOR, clrGreen);
+
+            lineName = "SL_" + IntegerToString(i);
+            ObjectCreate(0, lineName, OBJ_HLINE, 0, Time[i], sl);
+            ObjectSetInteger(0, lineName, OBJPROP_COLOR, clrRed);
+        }
+    }
+}
+
+// Initialization
+int OnInit() {
+    DetectFVG();
+    return(INIT_SUCCEEDED);
+}
+
+// On tick (for future dynamic updates)
+void OnTick() {
+    // Optional live updates
+}
